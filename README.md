@@ -170,6 +170,15 @@ lootserve was built to speed up OSCP labs and CTF workflows:
 * Python **3.8+**
 * No external dependencies (stdlib only).
 
+## Tests
+
+Run the test suite with:
+
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements-dev.txt
+    pytest -v
+
 ## License
 
 * See `LICENSE` in this repository for licensing details.
