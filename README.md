@@ -44,7 +44,7 @@ chmod +x install.sh
 sudo ./install.sh
 ```
 
-## Images
+## Images of lootserve
 
 ```bash
 lootserve -p 8888 --client linux -v
@@ -76,8 +76,6 @@ Typical usage:
   ```
 
 You can restrict the printed commands to a specific OS using `--client linux` or `--client windows`, or use the default dual-OS compact listing.
-
-## Images of lootserve
 
 ## Uploads (from the target back to you)
 
