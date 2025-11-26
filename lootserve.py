@@ -569,14 +569,18 @@ def linux_cmds(url: str, filename: str):
     cmds.append(f"chmod +x {filename_arg}")
     return cmds
 
-def one_liner(client: str, url: str, filename: str) -> str:
+def one_liner(client: str, url: str, filename: str, silent: bool = False) -> str:
     """Return a compact, preferred download command for the given client OS."""
     if client == "windows":
+        if silent:
+            return f"powershell -c \"(New-Object Net.WebClient).DownloadFile({ps_literal(url)},{ps_literal(filename)})\""
         return (
             f"powershell -Command "
             f"\"iwr -UseBasicParsing {ps_literal(url)} -OutFile {ps_literal(filename)}\""
         )
     elif client == "linux":
+        if silent:
+            return f"wget -q -O {shlex.quote(filename)} {shlex.quote(url)}"
         return f"wget -O {shlex.quote(filename)} {shlex.quote(url)}"
     else:
         raise ValueError(f"Unsupported client: {client}")
@@ -587,20 +591,20 @@ def print_header(sty: Sty, title: str):
     bar = "─" * max(10, min(width-2, 78))
     print(f"{sty.CY}{bar}{sty.D}\n{sty.B}{title}{sty.D}\n{sty.CY}{bar}{sty.D}")
 
-def print_file_block_compact_dual(sty: Sty, url: str, display_name: str, size: int, download_name: str):
+def print_file_block_compact_dual(sty: Sty, url: str, display_name: str, size: int, download_name: str, silent: bool = False):
     """Compact output: one-liners for Linux and Windows."""
     size_txt = human_size(size)
     print(f"{sty.B}•{sty.D} {display_name} {sty.MG}[{size_txt}]{sty.D}")
     # Linux (wget)
-    print(f"  {sty.BL}Linux:{sty.D}   {one_liner('linux', url, download_name)}")
+    print(f"  {sty.BL}Linux:{sty.D}   {one_liner('linux', url, download_name, silent)}")
     # Windows (iwr)
-    print(f"  {sty.BL}Windows:{sty.D} {one_liner('windows', url, download_name)}")
+    print(f"  {sty.BL}Windows:{sty.D} {one_liner('windows', url, download_name, silent)}")
 
-def print_file_block(sty: Sty, url: str, display_name: str, size: int, client: str, compact: bool, download_name: str):
+def print_file_block(sty: Sty, url: str, display_name: str, size: int, client: str, compact: bool, download_name: str, silent: bool = False):
     size_txt = human_size(size)
     if compact:
         print(f"{sty.B}•{sty.D} {display_name} {sty.MG}[{size_txt}]{sty.D}")
-        print(f"  {one_liner(client, url, download_name)}")
+        print(f"  {one_liner(client, url, download_name, silent)}")
         return
 
     # Full block with URL + multiple methods
@@ -616,7 +620,7 @@ def print_file_block(sty: Sty, url: str, display_name: str, size: int, client: s
             print(f"  {c}")
     print()
 
-def print_listing(sty: Sty, base_ip: str, port: int, directory: str, client: Optional[str], full: bool, recursive: bool):
+def print_listing(sty: Sty, base_ip: str, port: int, directory: str, client: Optional[str], full: bool, recursive: bool, silent: bool = False):
     files = list_regular_files(directory, recursive=recursive)
     if not files:
         print(f"{sty.YL}⚠️  No files in the current directory.{sty.D}")
@@ -636,7 +640,7 @@ def print_listing(sty: Sty, base_ip: str, port: int, directory: str, client: Opt
         download_name = os.path.basename(name)
         if client:
             # Single client chosen
-            print_file_block(sty, url, display_name, size, client, compact=not full, download_name=download_name)
+            print_file_block(sty, url, display_name, size, client, compact=not full, download_name=download_name, silent=silent)
         else:
             # Default: compact for both Linux & Windows
             if full:
@@ -650,7 +654,7 @@ def print_listing(sty: Sty, base_ip: str, port: int, directory: str, client: Opt
                 print()
             else:
                 # Compact (default)
-                print_file_block_compact_dual(sty, url, display_name, size, download_name)
+                print_file_block_compact_dual(sty, url, display_name, size, download_name, silent=silent)
 
 # ---------- Main ----------
 def main():
@@ -674,6 +678,7 @@ def main():
     parser.add_argument("--upload", action="store_true", help="Enable file uploads via PUT/POST.")
     parser.add_argument("--upload-dir", default=None, help="Directory to save uploads (default: served dir).")
     parser.add_argument("--max-upload-mb", type=int, default=None, help="Optional max upload size in MB.")
+    parser.add_argument("-s", "--silent", action="store_true", help="Generate download commands with no output (silent mode).")
     args = parser.parse_args()
 
     sty = Sty(use_color(args.no_color))
@@ -698,7 +703,7 @@ def main():
         print(f"Error starting server: {e}", file=sys.stderr)
         sys.exit(2)
 
-    print_listing(sty, display_ip, selected_port, os.getcwd(), args.client, args.full, args.recursive)
+    print_listing(sty, display_ip, selected_port, os.getcwd(), args.client, args.full, args.recursive, args.silent)
 
     args.port = selected_port
 

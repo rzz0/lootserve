@@ -1,6 +1,6 @@
-
-
 # lootserve – a tiny HTTP server for OSCP and CTFs
+
+📖 **Read the Medium article**: [Lootserve: A Tiny HTTP Server to Speed Up Your OSCP, CPTS, EJPT, and CTFs Workflow](https://medium.com/@rzz0/lootserve-a-tiny-http-server-to-speed-up-your-oscp-cpts-ejpt-and-ctfs-workflow-7014c1e4bf32)
 
 ## Overview
 
