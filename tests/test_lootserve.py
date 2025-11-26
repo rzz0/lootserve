@@ -112,40 +112,43 @@ def test_linux_windows_cmds_and_one_liner():
     with pytest.raises(ValueError):
         ls.one_liner("macos", url, "f.txt")
     assert any("| bash" in c for c in ls.linux_cmds(url, "f.sh"))
+    # Silent mode
+    assert "wget -q" in ls.one_liner("linux", url, "f.txt", silent=True)
+    assert "DownloadFile" in ls.one_liner("windows", url, "f.txt", silent=True)
 
 
 def test_print_listing_and_blocks(tmp_path, capsys):
     (tmp_path/"a.txt").write_text("x")
-    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(tmp_path), client=None, full=True, recursive=False)
+    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(tmp_path), client=None, full=True, recursive=False, silent=False)
     out = capsys.readouterr().out
     assert "Linux:" in out and "Windows:" in out
-    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="linux", compact=False, download_name="f")
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="linux", compact=False, download_name="f", silent=False)
     out2 = capsys.readouterr().out
     assert "wget -O" in out2
     # Empty directory message
     empty = tmp_path/"empty"; empty.mkdir()
-    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(empty), client=None, full=False, recursive=False)
+    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(empty), client=None, full=False, recursive=False, silent=False)
     out3 = capsys.readouterr().out
     assert "No files in the current directory" in out3
 
 
 def test_print_listing_compact_dual(tmp_path, capsys):
     (tmp_path/"a.txt").write_text("x")
-    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(tmp_path), client=None, full=False, recursive=False)
+    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(tmp_path), client=None, full=False, recursive=False, silent=False)
     out = capsys.readouterr().out
     assert "Linux:" in out and "Windows:" in out and "a.txt" in out
 
 
 def test_print_file_block_windows_full(capsys):
-    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="windows", compact=False, download_name="f")
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="windows", compact=False, download_name="f", silent=False)
     out = capsys.readouterr().out
     assert "Windows (CMD/PowerShell):" in out and "iwr -UseBasicParsing" in out
 
 
 def test_print_file_block_compact_branches(capsys):
     # Compact one-liners for both OS branches
-    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="linux", compact=True, download_name="f")
-    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="windows", compact=True, download_name="f")
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="linux", compact=True, download_name="f", silent=False)
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="windows", compact=True, download_name="f", silent=False)
     out = capsys.readouterr().out
     assert "wget -O" in out and "iwr -UseBasicParsing" in out
 
@@ -431,9 +434,24 @@ def test_snippets_richer():
 
 
 def test_compact_dual_direct(capsys):
-    ls.print_file_block_compact_dual(ls.Sty(False), "http://h/file", "file", 1234, "file")
+    ls.print_file_block_compact_dual(ls.Sty(False), "http://h/file", "file", 1234, "file", silent=False)
     out = capsys.readouterr().out
     assert "Linux:" in out and "Windows:" in out
+
+
+def test_silent_mode(tmp_path, capsys):
+    (tmp_path/"test.txt").write_text("x")
+    # Test silent mode in listing
+    ls.print_listing(ls.Sty(False), "127.0.0.1", 1, str(tmp_path), client=None, full=False, recursive=False, silent=True)
+    out = capsys.readouterr().out
+    assert "wget -q" in out and "DownloadFile" in out
+    # Test silent mode with specific client
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="linux", compact=True, download_name="f", silent=True)
+    out2 = capsys.readouterr().out
+    assert "wget -q" in out2
+    ls.print_file_block(ls.Sty(False), "http://h/f", "f", 1000, client="windows", compact=True, download_name="f", silent=True)
+    out3 = capsys.readouterr().out
+    assert "DownloadFile" in out3
 
 
 def test_version_and_module_meta(monkeypatch, capsys):
