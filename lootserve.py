@@ -715,7 +715,11 @@ def main():
         updir = args.upload_dir or os.getcwd()
         lim = f" · limit: {args.max_upload_mb} MB" if args.max_upload_mb else ""
         print(f"⬆️  {sty.B}Uploads:{sty.D} ENABLED → {updir}{lim}")
-        print(f"   PUT:   curl -T file http://{display_ip}:{args.port}/file")
+        example_url = f"http://{display_ip}:{args.port}/file"
+        ps_url = ps_literal(example_url)
+        ps_file = ps_literal(".\\file")
+        print(f"   PUT:   Invoke-WebRequest -Uri {ps_url} -Method Put -InFile {ps_file} -ContentType \"application/octet-stream\"")
+        print(f"   PUT:   curl -T file {example_url}")
         print(f"   POST:  curl -F file=@file http://{display_ip}:{args.port}/upload")
         print(f"   POST*: curl --data-binary @file -H 'X-Filename: file' http://{display_ip}:{args.port}/raw")
     if args.verbose:
